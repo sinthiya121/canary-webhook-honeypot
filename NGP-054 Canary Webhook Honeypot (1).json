@@ -1,0 +1,602 @@
+{
+  "name": "NGP-054 Canary Webhook Honeypot",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "canary-054",
+        "options": {
+          "responseCode": {
+            "values": {}
+          },
+          "responseData": "OK"
+        }
+      },
+      "id": "8d139603-78ef-4a8a-969b-997d11968947",
+      "name": "Canary Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        -160
+      ],
+      "webhookId": "fd467222-3411-4503-a628-0916a620744a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "source_ip",
+              "type": "string",
+              "value": "={{ (($json.headers || {})[\"x-forwarded-for\"] || ($json.headers || {})[\"x-real-ip\"] || \"unknown\").toString().split(\",\").pop().trim() }}"
+            },
+            {
+              "id": "c2",
+              "name": "user_agent",
+              "type": "string",
+              "value": "={{ ($json.headers || {})[\"user-agent\"] || \"unknown\" }}"
+            },
+            {
+              "id": "c3",
+              "name": "headers_json",
+              "type": "string",
+              "value": "={{ JSON.stringify(Object.fromEntries(Object.entries($json.headers || {}).map(([k, v]) => [\"authorization\", \"cookie\", \"proxy-authorization\", \"x-api-key\"].includes(k.toLowerCase()) ? [k, \"[redacted]\"] : [k, v]))) }}"
+            },
+            {
+              "id": "c4",
+              "name": "method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "id": "c5",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "id": "c6",
+              "name": "hit_time",
+              "type": "string",
+              "value": "={{ $now.setZone('Asia/Kolkata').toFormat('yyyy-MM-dd HH:mm:ss') }} IST"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9bd61b76-c51d-4a43-9751-e138fc2e9ed6",
+      "name": "Capture Hit",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "8Wdd1F0crECnqJ7u",
+          "cachedResultName": "canary_054_hits"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "hit_time": "={{ $json.hit_time }}",
+            "execution_id": "={{ $json.execution_id }}",
+            "source_ip": "={{ $json.source_ip }}",
+            "user_agent": "={{ $json.user_agent }}",
+            "method": "={{ $json.method }}",
+            "headers_json": "={{ $json.headers_json }}"
+          },
+          "schema": [
+            {
+              "id": "hit_time",
+              "displayName": "hit_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_ip",
+              "displayName": "source_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_agent",
+              "displayName": "user_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "method",
+              "displayName": "method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headers_json",
+              "displayName": "headers_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e126d4b5-8481-4881-b069-e870cda59705",
+      "name": "Log Hit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        -48
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "DsfYk5H6QFZYM1kr",
+          "cachedResultName": "NGP-054 Canary Classifier"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_ip": "={{ $('Capture Hit').item.json.source_ip }}",
+            "user_agent": "={{ $('Capture Hit').item.json.user_agent }}",
+            "headers": "={{ $('Capture Hit').item.json.headers_json }}",
+            "method": "={{ $('Capture Hit').item.json.method }}",
+            "path": "/canary-054"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source_ip",
+              "displayName": "source_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "user_agent",
+              "displayName": "user_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "headers",
+              "displayName": "headers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "method",
+              "displayName": "method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "path",
+              "displayName": "path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {}
+      },
+      "id": "948da77e-2f2e-4e43-9219-116046c59ecb",
+      "name": "Classify Hit (AI Sub-workflow)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1248,
+        -48
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "v1",
+              "leftValue": "={{ ['scanner','human','bot'].includes($json.verdict) && ['LOW','MEDIUM','HIGH'].includes($json.severity) && typeof $json.summary === 'string' && $json.summary.length > 0 && $json.summary.length <= 160 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7ba89f21-8678-4809-9b7f-62b9f617af8f",
+      "name": "Output Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1472,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "5479238045",
+        "text": "=🟣 NGP-054 | exec #{{ $('Capture Hit').item.json.execution_id }} | {{ $('Capture Hit').item.json.hit_time }} | {{ $json.verdict }} / {{ $json.severity }} | {{ String($json.summary).replace(/[<>&]/g, '') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8e2d15f8-f2d8-4309-965d-53efa2e800de",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        0
+      ],
+      "webhookId": "759957ea-a33b-4f9a-a604-f0fdb3fe788e",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZSbWZFOKRHtXfpu7",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "DsfYk5H6QFZYM1kr",
+          "cachedResultName": "NGP-054 Canary Classifier"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_ip": "={{ $('Capture Hit').item.json.source_ip }}",
+            "user_agent": "={{ $('Capture Hit').item.json.user_agent }}",
+            "headers": "={{ $('Capture Hit').item.json.headers_json }}",
+            "method": "={{ $('Capture Hit').item.json.method }}",
+            "path": "/canary-054"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source_ip",
+              "displayName": "source_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "user_agent",
+              "displayName": "user_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "headers",
+              "displayName": "headers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "method",
+              "displayName": "method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "path",
+              "displayName": "path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {}
+      },
+      "id": "b0e0f8f4-e422-4deb-b24e-6b686446d582",
+      "name": "Retry Classify (once)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1328,
+        320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "v1",
+              "leftValue": "={{ ['scanner','human','bot'].includes($json.verdict) && ['LOW','MEDIUM','HIGH'].includes($json.severity) && typeof $json.summary === 'string' && $json.summary.length > 0 && $json.summary.length <= 160 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c62ccb53-a303-473f-bf9e-bafa6ac3240c",
+      "name": "Retry Output Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1552,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "5479238045",
+        "text": "=🟣 NGP-054 | exec #{{ $('Capture Hit').item.json.execution_id }} | {{ $('Capture Hit').item.json.hit_time }} | {{ $json.verdict }} / {{ $json.severity }} | {{ String($json.summary).replace(/[<>&]/g, '') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "2f6db3a7-8566-4100-afa2-b0d14398ca43",
+      "name": "Send Alert (after retry)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1808,
+        96
+      ],
+      "webhookId": "9762d685-4694-4fa4-bf90-1b557c12c46a",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZSbWZFOKRHtXfpu7",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5479238045",
+        "text": "=🟣 NGP-054 | exec #{{ $('Capture Hit').item.json.execution_id }} | {{ $('Capture Hit').item.json.hit_time }} | unverified / UNKNOWN | Classification failed validation after one retry; details withheld",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "142a1104-960f-46e1-9201-1f098d79a73d",
+      "name": "Send Fallback Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1808,
+        288
+      ],
+      "webhookId": "c13fd6bd-fbb6-4d73-b80c-29bb0f14c7be",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZSbWZFOKRHtXfpu7",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Canary Webhook": {
+      "main": [
+        [
+          {
+            "node": "Capture Hit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Hit": {
+      "main": [
+        [
+          {
+            "node": "Log Hit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Hit": {
+      "main": [
+        [
+          {
+            "node": "Classify Hit (AI Sub-workflow)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Hit (AI Sub-workflow)": {
+      "main": [
+        [
+          {
+            "node": "Output Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Valid?": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Retry Classify (once)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Classify (once)": {
+      "main": [
+        [
+          {
+            "node": "Retry Output Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Output Valid?": {
+      "main": [
+        [
+          {
+            "node": "Send Alert (after retry)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Fallback Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Fallback Alert": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f9f4d770-2b92-4cae-a6d8-78562763195c",
+  "meta": {
+    "instanceId": "a62cb33f81f46e807e76c0a2c16a11db5826d6b55f3bf2dbe56632ba278f50ee"
+  },
+  "nodeGroups": [
+    {
+      "id": "4ece0d6c-14b2-4862-882e-425b1af121ed",
+      "name": "Record canary hit",
+      "nodeIds": [
+        "9bd61b76-c51d-4a43-9751-e138fc2e9ed6",
+        "e126d4b5-8481-4881-b069-e870cda59705"
+      ],
+      "description": "Takes any request to the canary URL and logs IP, user-agent and headers with an IST timestamp"
+    },
+    {
+      "id": "799caa55-17d0-4829-a9ce-d9453654731f",
+      "name": "Judge the visitor",
+      "nodeIds": [
+        "948da77e-2f2e-4e43-9219-116046c59ecb",
+        "7ba89f21-8678-4809-9b7f-62b9f617af8f"
+      ],
+      "description": "Asks the AI sub-workflow for a verdict and checks it is allowed values and short enough"
+    },
+    {
+      "id": "f2fa6905-43a9-4b47-912c-c0332ac8cee2",
+      "name": "Retry judgement once",
+      "nodeIds": [
+        "b0e0f8f4-e422-4deb-b24e-6b686446d582",
+        "c62ccb53-a303-473f-bf9e-bafa6ac3240c"
+      ],
+      "description": "If the first AI answer was invalid, asks again once and re-validates before alerting"
+    }
+  ],
+  "id": "zTdzu2JXZh02uf6q",
+  "tags": []
+}
